@@ -6,52 +6,46 @@ const cors = require('cors');
 const app = express();
 const PORT = 3000;
 
-// Middleware
-app.use(cors());
-// ESP32 sends data as x-www-form-urlencoded by default in your code
+// ✅ UPDATED CORS: This allows your Netlify site to talk to this backend
+app.use(cors({
+    origin: 'https://rohit-iot.netlify.app'
+}));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-
+// 1. DATABASE CONNECTION
+// Replace <password> and <cluster-url> with your Atlas details
 const mongoURI = "mongodb+srv://sounicbehera_db_user:RohitCutm@cluster0.mgxmky5.mongodb.net/?appName=Cluster0";
 
 mongoose.connect(mongoURI)
-    .then(() => console.log("✅ Successfully connected to MongoDB: Rohit_Iot"))
-    .catch(err => console.error("❌ MongoDB connection error:", err));
+    .then(() => console.log("✅ Connected to MongoDB: Rohit_Iot"))
+    .catch(err => console.error("❌ Connection error:", err));
 
-// 2. SENSOR DATA SCHEMA (Defines the structure)
+// 2. SCHEMA & MODEL
 const sensorSchema = new mongoose.Schema({
-    device: { type: String, required: true },
-    temp: { type: Number, required: true },
-    status: { type: String, required: true },
+    device: String,
+    temp: Number,
+    status: String,
     timestamp: { type: Date, default: Date.now }
 });
-
-
 const SensorData = mongoose.model('SensorData', sensorSchema, 'sensor_readings');
 
-// 4. API ROUTE FOR ESP32
+// 3. POST ROUTE (For ESP32)
 app.post('/update', async (req, res) => {
-    console.log("📥 Incoming Data:", req.body);
-    
     try {
-        const entry = new SensorData({
-            device: req.body.device,
-            temp: req.body.temp,
-            status: req.body.status
-        });
-
+        const entry = new SensorData(req.body);
         await entry.save();
-        res.status(200).send("Data Received and Saved!");
+        res.status(200).send("Data Saved");
     } catch (error) {
-        console.error("❌ Save Error:", error);
-        res.status(500).send("Internal Server Error");
+        res.status(500).send("Error");
     }
 });
 
-// 5. GET ROUTE FOR YOUR WEBSITE (To show data in real-time)
+// 4. GET ROUTE (For Netlify Website)
 app.get('/data', async (req, res) => {
     try {
+        // Gets the latest 10 readings
         const latestData = await SensorData.find().sort({ timestamp: -1 }).limit(10);
         res.json(latestData);
     } catch (error) {
@@ -59,6 +53,4 @@ app.get('/data', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Backend live on port ${PORT}`));
