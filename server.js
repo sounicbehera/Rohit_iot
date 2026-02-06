@@ -22,10 +22,13 @@ mongoose.connect(mongoURI)
     .then(() => console.log("✅ Connected to MongoDB: Rohit_Iot"))
     .catch(err => console.error("❌ Connection error:", err));
 
-// 2. SCHEMA & MODEL
+// 2. SCHEMA & MODEL - UPDATED WITH NEW FIELDS
 const sensorSchema = new mongoose.Schema({
     device: String,
     temp: Number,
+    humidity: Number,           // ✅ NEW FIELD
+    soil_moisture: Number,      // ✅ NEW FIELD
+    location: String,           // ✅ NEW FIELD
     status: String,
     timestamp: { type: Date, default: Date.now }
 });
